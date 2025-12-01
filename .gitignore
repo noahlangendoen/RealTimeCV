@@ -1,0 +1,14 @@
+build*/
+build/
+
+*.exe
+*.dll
+*.lib
+
+CMakeCache.txt
+CMakeFiles/
+
+.vscode/
+
+CMakeFiles
+models
