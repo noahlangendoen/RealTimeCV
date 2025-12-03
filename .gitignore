@@ -1,9 +1,16 @@
 build*/
 build/
 
+models/__pycache__
+__pycache__/
+
 *.exe
 *.dll
 *.lib
+*.pt
+*.onnx
+*.pth
+*.pyc
 
 CMakeCache.txt
 CMakeFiles/
@@ -11,4 +18,7 @@ CMakeFiles/
 .vscode/
 
 CMakeFiles
-models
+
+data/
+
+.env
