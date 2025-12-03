@@ -1,8 +1,8 @@
 build*/
 build/
 
-models/__pycache__
 __pycache__/
+*.pyc
 
 *.exe
 *.dll
@@ -10,7 +10,6 @@ __pycache__/
 *.pt
 *.onnx
 *.pth
-*.pyc
 
 CMakeCache.txt
 CMakeFiles/
