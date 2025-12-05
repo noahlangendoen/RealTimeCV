@@ -9,6 +9,7 @@ import torch.optim as optim
 from torchvision import transforms, datasets
 import matplotlib.pyplot as plt
 import numpy as np
+import onnxscript
 
 load_dotenv()
 
@@ -191,6 +192,9 @@ class TrainModel():
                 torch.save(self.model.state_dict(), 'best_model.pth')
                 print(f"Saved best model with validation loss: {best_val_loss:.4f}")
 
+                # Also export to ONNX
+                self._export_to_onnx()
+
             print(f"\nEpoch [{epoch+1}/{epochs}]")
             print(f"Train Loss: {avg_train_loss:.4f}, Train Acc: {train_accuracy:.2f}%")
             print(f"Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%")
@@ -235,6 +239,48 @@ class TrainModel():
         print(f"Best Validation Accuracy: {max(self.val_accuracies):.2f}%")
         print(f"Final Training Loss: {self.train_losses[-1]:.4f}")
         print(f"Final Validation Loss: {self.val_losses[-1]:.4f}")
+
+    def _export_to_onnx(self, output_path="models/best_model.onnx", image_size=48):
+        """
+        Export the current model to ONNX format
+        
+        Args:
+            output_path: Path to save the ONNX model
+            image_size: Input image size (default 48x48)
+        """
+        try:
+            self.model.eval()
+            dummy_input = torch.randn(1, 3, image_size, image_size).to(self.device)
+            
+            # Create output directory if it doesn't exist
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            
+            torch.onnx.export(
+                self.model,
+                dummy_input,
+                output_path,
+                export_params=True,
+                opset_version=17,  # Changed from 11 to 17 (ONNX Runtime supports this well)
+                do_constant_folding=True,  # Optimize the model
+                input_names=['input'],
+                output_names=['output'],
+                dynamic_axes={
+                    'input': {0: 'batch_size'},
+                    'output': {0: 'batch_size'}
+                },
+                dynamo=False
+            )
+            
+            print(f"✓ Model exported to ONNX: {output_path}")
+            print(f"  Input: [batch_size, 3, {image_size}, {image_size}]")
+            print(f"  Output: [batch_size, 7]")
+            print(f"  Classes: {self.class_names if hasattr(self, 'class_names') else 'Unknown'}")
+            
+        except Exception as e:
+            print(f"✗ Failed to export ONNX: {e}")
+            import traceback
+            traceback.print_exc()
+
 
 
 def main():
