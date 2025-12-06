@@ -60,8 +60,9 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 set(SOURCES
     src/main.cpp
     src/core/frame_buffer.cpp
-    src/capture/video_capture.cpp
     src/core/types.cpp
+    src/capture/video_capture.cpp
+    src/detection/face_detector.cpp
 )
 
 # Create executable

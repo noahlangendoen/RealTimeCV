@@ -1,62 +1,36 @@
-#include <iostream>
 #include <opencv2/opencv.hpp>
-#include "capture/video_capture.hpp"
-#include "core/frame_buffer.hpp"
+#include "detection/face_detector.hpp"
 
 int main() {
-    std::cout << "=== RealTimeCV Webcam Test ===" << std::endl;
-
-    // Create frame buffer (max 10 frames)
-    FrameBuffer frameBuffer(10);
-
-    // Create video capture (device 0, default API, 640x480)
-    VideoCapture capture(0, cv::CAP_ANY, 640, 480);
-
-    // Initialize camera
-    if (!capture.initialize()) {
-        std::cerr << "Failed to initialize camera!" << std::endl;
+    // Open webcam
+    cv::VideoCapture cap(0);
+    if (!cap.isOpened()) {
+        std::cerr << "Can't open camera" << std::endl;
         return -1;
     }
-
-    // Start capture thread
-    capture.start(&frameBuffer);
-
-    std::cout << "Press 'q' to quit" << std::endl;
-
-    // Main display loop
-    while (true) {
-        // Get frame from buffer (with timeout)
-        auto frameOpt = frameBuffer.popWithTimeout(1000);  // 1 second timeout
-
-        if (!frameOpt.has_value()) {
-            std::cerr << "No frame received (timeout)" << std::endl;
-            continue;
-        }
-
-        Frame frame = frameOpt.value();
-
-        if (!frame.isValid()) {
-            std::cerr << "Invalid frame received" << std::endl;
-            continue;
-        }
-
-        // Display the frame
-        cv::imshow("RealTimeCV - Webcam Test", frame.data);
-
-        // Check for quit key
-        int key = cv::waitKey(1);
-        if (key == 'q' || key == 'Q' || key == 27) {  // 'q' or ESC
-            break;
-        }
+    
+    // Initialize face detector
+    FaceDetector detector("../models/yolov8n-face.onnx");
+    if (!detector.initialize()) {
+        return -1;
     }
-
-    // Cleanup
-    std::cout << "\nShutting down..." << std::endl;
-    capture.stop();
-    cv::destroyAllWindows();
-
-    std::cout << "Total frames captured: " << capture.getFrameCount() << std::endl;
-    std::cout << "Done!" << std::endl;
-
+    
+    cv::Mat frame;
+    while (true) {
+        cap.read(frame);
+        if (frame.empty()) break;
+        
+        // Detect faces
+        std::vector<FaceBox> faces = detector.detectFaces(frame);
+        
+        // Draw boxes
+        for (const auto& face : faces) {
+            cv::rectangle(frame, face.box, cv::Scalar(0, 255, 0), 2);
+        }
+        
+        cv::imshow("Webcam", frame);
+        if (cv::waitKey(1) == 27) break; // ESC to exit
+    }
+    
     return 0;
 }

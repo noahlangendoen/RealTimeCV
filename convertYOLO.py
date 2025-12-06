@@ -1,5 +1,5 @@
 from ultralytics import YOLO
 
-model = YOLO("models/yolov8n.pt")
+model = YOLO('yolov8n-face.pt')
 
 model.export(format='onnx')
