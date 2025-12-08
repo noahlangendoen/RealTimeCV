@@ -63,6 +63,7 @@ set(SOURCES
     src/core/types.cpp
     src/capture/video_capture.cpp
     src/detection/face_detector.cpp
+    src/classification/expression_classifier.cpp
 )
 
 # Create executable

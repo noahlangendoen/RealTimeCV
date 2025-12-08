@@ -309,7 +309,7 @@ def main():
 
     # Preprocess and load data
     print("\nLoading and preprocessing data...")
-    trainer.preprocess_data(image_size=48)
+    trainer.preprocess_data(image_size=224)
 
     # Train the model
     print("\nStarting training...")

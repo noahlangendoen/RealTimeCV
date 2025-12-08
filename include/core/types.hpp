@@ -68,9 +68,17 @@ struct DetectionResult {
     }
 };
 
+// Face BBox Structure
 struct FaceBox {
     cv::Rect box;
     float confidence;
+};
+
+// Expression Classification Result
+struct ExpressionResult {
+    std::string label;
+    float confidence;
+    int classId;
 };
 
 #endif

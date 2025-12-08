@@ -1,5 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include "detection/face_detector.hpp"
+#include "classification/expression_classifier.hpp"
 
 int main() {
     // Open webcam
@@ -15,6 +16,12 @@ int main() {
         return -1;
     }
     
+    // Initialize expression classifier
+    ExpressionClassifier classifier("../models/best_model.onnx");
+    if (!classifier.initialize()) {
+        return -1;
+    }
+    
     cv::Mat frame;
     while (true) {
         cap.read(frame);
@@ -23,12 +30,31 @@ int main() {
         // Detect faces
         std::vector<FaceBox> faces = detector.detectFaces(frame);
         
-        // Draw boxes
+        // Process each detected face
         for (const auto& face : faces) {
+            // Draw bounding box
             cv::rectangle(frame, face.box, cv::Scalar(0, 255, 0), 2);
+            
+            // Extract face ROI
+            cv::Mat faceROI = frame(face.box);
+            
+            // Classify expression
+            ExpressionResult expression = classifier.classify(faceROI);
+            
+            // Display result
+            std::string text = expression.label + " (" + 
+                             std::to_string((int)(expression.confidence * 100)) + "%)";
+            
+            cv::putText(frame, text, 
+                       cv::Point(face.box.x, face.box.y - 10),
+                       cv::FONT_HERSHEY_SIMPLEX, 0.6,
+                       cv::Scalar(0, 255, 0), 2);
+            
+            std::cout << "Detected: " << expression.label 
+                     << " (confidence: " << expression.confidence << ")" << std::endl;
         }
         
-        cv::imshow("Webcam", frame);
+        cv::imshow("Expression Detection", frame);
         if (cv::waitKey(1) == 27) break; // ESC to exit
     }
     
