@@ -12,7 +12,7 @@ int main() {
 
     if (!env.load(ENV_PATH)) {
         std::cerr << "ERROR: .env file not found";
-        return 0;
+        return -1;
     }
 
     std::string detector_path = env.get("FACE_DETECTOR");
