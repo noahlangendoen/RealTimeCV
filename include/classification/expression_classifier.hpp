@@ -30,7 +30,7 @@ private:
         "Angry", "Disgust", "Fear", "Happy", "Neutral", "Sad", "Surprise"
     };
 
-    // Model expects 48x48 RGB images
+    // Variable to change image input size. Always n x n size.
     const int inputSize_ = 224;
 };
 

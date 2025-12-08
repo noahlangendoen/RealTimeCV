@@ -1,8 +1,22 @@
 #include <opencv2/opencv.hpp>
 #include "detection/face_detector.hpp"
 #include "classification/expression_classifier.hpp"
+#include "core/env_loader.hpp"
 
 int main() {
+
+    EnvLoader env;
+
+    if (!env.load("../.env")) {
+        std::cerr << "ERROR: .env file not found";
+        return 0;
+    }
+
+    std::string detector_path = env.get("FACE_DETECTOR");
+    std::string classifier_path = env.get("BEST_CLASSIFIER");
+
+    std::cout << "Detector Path: " << detector_path << "\nClassifier Path: " << classifier_path << std::endl;
+
     // Open webcam
     cv::VideoCapture cap(0);
     if (!cap.isOpened()) {
@@ -11,13 +25,13 @@ int main() {
     }
     
     // Initialize face detector
-    FaceDetector detector("../models/yolov8n-face.onnx");
+    FaceDetector detector(detector_path);
     if (!detector.initialize()) {
         return -1;
     }
     
     // Initialize expression classifier
-    ExpressionClassifier classifier("../models/best_model.onnx");
+    ExpressionClassifier classifier(classifier_path);
     if (!classifier.initialize()) {
         return -1;
     }
