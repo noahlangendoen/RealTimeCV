@@ -33,6 +33,7 @@ class ResidualBlock(nn.Module):
     def forward(self, x):
         identity = self.skip(x)
         out = self.conv1(x)
+        out = self.relu(out)  
         out = self.conv2(out)
         out += identity
         out = self.relu(out)

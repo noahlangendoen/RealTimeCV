@@ -31,7 +31,7 @@ private:
     };
 
     // Model expects 48x48 RGB images
-    const int inputSize_ = 48;
+    const int inputSize_ = 224;
 };
 
 #endif
