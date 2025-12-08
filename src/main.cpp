@@ -20,7 +20,7 @@ int main() {
     // Open webcam
     cv::VideoCapture cap(0);
     if (!cap.isOpened()) {
-        std::cerr << "Can't open camera" << std::endl;
+        std::cerr << "Caan't open camera" << std::endl;
         return -1;
     }
     
