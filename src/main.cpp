@@ -3,11 +3,14 @@
 #include "classification/expression_classifier.hpp"
 #include "core/env_loader.hpp"
 
+// Modify the path to the env file as needed -- this may need to be changed
+#define ENV_PATH "../.env"
+
 int main() {
 
     EnvLoader env;
 
-    if (!env.load("../.env")) {
+    if (!env.load(ENV_PATH)) {
         std::cerr << "ERROR: .env file not found";
         return 0;
     }
