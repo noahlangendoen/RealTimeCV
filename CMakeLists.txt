@@ -64,7 +64,12 @@ set(SOURCES
     src/capture/video_capture.cpp
     src/detection/face_detector.cpp
     src/classification/expression_classifier.cpp
+    src/pipeline/pipeline_manager.cpp
 )
+
+# Test executable
+add_executable(test_types src/tests/test_types.cpp src/core/types.cpp)
+target_link_libraries(test_types ${OpenCV_LIBS})
 
 # Create executable
 add_executable(cv_pipeline ${SOURCES})
