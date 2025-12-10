@@ -149,52 +149,18 @@ void PipelineManager::setClassificationThreshold(float threshold) {
 }
 
 void PipelineManager::captureThreadFunc() {
-    std::cout << "Capture Thread Started" << std::endl;
+   std::cout << "Capture Thread Started" << std::endl;
 
-    // Open camera directly
-    cv::VideoCapture cap(cameraId_);
-    if (!cap.isOpened()) {
-        std::cerr << "Failed to Open Camera in Capture Thread" << std::endl;
-        isRunning_ = false;
-        return;
-    }
-
-    // Set resolution
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, captureWidth_);
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, captureHeight_);
-
-    std::cout << "Camera opened successfully in capture thread" << std::endl;
-
-    cv::Mat frame;
-    int frameCount = 0;
-
+    // Use the already initialized videoCapture_ instead of opening a new one
+    videoCapture_->start(detectionBuffer_.get());
+    
+    // Wait for stop signal
     while (isRunning_) {
-        // Capture frame
-        if (!cap.read(frame) || frame.empty()) {
-            std::cerr << "Failed to Read Frame" << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            continue;
-        }
-
-        // Create frame with metadata
-        Frame capturedFrame;
-        capturedFrame.data = frame.clone();
-        capturedFrame.timestamp = std::chrono::steady_clock::now();
-        capturedFrame.frameId = frameIdCounter_++;
-
-        // Push to detection buffer (will block if full)
-        detectionBuffer_->push(capturedFrame);
-
-        frameCount++;
-
-        // Debug output every 30 frames
-        if (frameCount % 30 == 0) {
-            std::cout << "Captured " << frameCount << " frames" << std::endl;
-        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-
-    cap.release();
-    std::cout << "Stopped Camera -- Total Frames: " << frameCount << std::endl;
+    
+    videoCapture_->stop();
+    std::cout << "Capture Thread Stopped" << std::endl;
 }
 
 void PipelineManager::detectionThreadFunc() {
@@ -221,15 +187,39 @@ void PipelineManager::detectionThreadFunc() {
             }
         }
 
-        if (!filteredFaces.empty()) {
-            // Store how many faces we expect to classify for this frame
-            {
-                std::lock_guard<std::mutex> lock(frameMapMutex_);
+        // Store frame data and track expected faces
+        {
+            std::lock_guard<std::mutex> lock(frameMapMutex_);
+
+            // Store the original frame for later display
+            ProcessedFrame processedFrame;
+            processedFrame.frame = frame.data.clone();
+            processedFrame.frameId = frame.frameId;
+            processedFrame.timestamp = frame.timestamp;
+            processedFrame.faces = std::vector<ClassifiedFace>();
+
+            pendingFrames_[frame.frameId] = processedFrame;
+
+            if (!filteredFaces.empty()) {
+                // Track how many faces we expect to classify
                 frameExpectedFaces_[frame.frameId] = filteredFaces.size();
                 frameClassifications_[frame.frameId] = std::vector<ClassifiedFace>();
-            }
+            } else {
+                // No faces - send directly to display
+                frameExpectedFaces_[frame.frameId] = 0;
 
-            // Push each detected face to classification queue
+                std::unique_lock<std::mutex> dispLock(displayQueueMutex_);
+                displayQueue_.push(processedFrame);
+                dispLock.unlock();
+                displayQueueCV_.notify_one();
+
+                pendingFrames_.erase(frame.frameId);
+                continue;
+            }
+        }
+
+        // Push each detected face to classification queue
+        if (!filteredFaces.empty()) {
             std::unique_lock<std::mutex> lock(classificationQueueMutex_);
             for (const auto& faceBox : filteredFaces) {
                 // Extract face ROI
@@ -251,29 +241,7 @@ void PipelineManager::detectionThreadFunc() {
             }
 
             lock.unlock();
-            classificationQueueCV_.notify_one();
-
-            // Also send frame to display queue (will be drawn with classifications later)
-            ProcessedFrame processedFrame;
-            processedFrame.frame = frame.data.clone();
-            processedFrame.frameId = frame.frameId;
-            processedFrame.timestamp = frame.timestamp;
-
-            std::unique_lock<std::mutex> dispLock(displayQueueMutex_);
-            displayQueue_.push(processedFrame);
-            dispLock.unlock();
-            displayQueueCV_.notify_one();
-        } else {
-            // No faces detected, send frame to display
-            ProcessedFrame processedFrame;
-            processedFrame.frame = frame.data.clone();
-            processedFrame.timestamp = frame.timestamp;
-            processedFrame.frameId = frame.frameId;
-
-            std::unique_lock<std::mutex> lock(displayQueueMutex_);
-            displayQueue_.push(processedFrame);
-            lock.unlock();
-            displayQueueCV_.notify_one();
+            classificationQueueCV_.notify_all();
         }
 
         frameCount++;
@@ -315,13 +283,37 @@ void PipelineManager::classificationThreadFunc() {
         classifiedFace.timestamp = detectedFace.timestamp;
         classifiedFace.expression = expression;
         classifiedFace.frameId = detectedFace.frameId;
-    
-        // Add frame to classification list
+
+        // Add classification and check if frame is complete
         {
             std::lock_guard<std::mutex> lock(frameMapMutex_);
 
             if (frameClassifications_.find(detectedFace.frameId) != frameClassifications_.end()) {
                 frameClassifications_[detectedFace.frameId].push_back(classifiedFace);
+
+                // Check if all faces for this frame are now classified
+                int expectedFaces = frameExpectedFaces_[detectedFace.frameId];
+                int classifiedFaces = frameClassifications_[detectedFace.frameId].size();
+
+                if (classifiedFaces == expectedFaces) {
+                    // All faces classified! Send complete frame to display
+                    auto pendingIt = pendingFrames_.find(detectedFace.frameId);
+                    if (pendingIt != pendingFrames_.end()) {
+                        ProcessedFrame completeFrame = pendingIt->second;
+                        completeFrame.faces = frameClassifications_[detectedFace.frameId];
+
+                        // Send to display
+                        std::unique_lock<std::mutex> dispLock(displayQueueMutex_);
+                        displayQueue_.push(completeFrame);
+                        dispLock.unlock();
+                        displayQueueCV_.notify_one();
+
+                        // Cleanup
+                        pendingFrames_.erase(pendingIt);
+                        frameClassifications_.erase(detectedFace.frameId);
+                        frameExpectedFaces_.erase(detectedFace.frameId);
+                    }
+                }
             }
         }
 
@@ -337,9 +329,10 @@ void PipelineManager::displayThreadFunc() {
     cv::namedWindow("Expression Detection", cv::WINDOW_AUTOSIZE);
 
     int frameCount = 0;
+    int droppedFrames = 0;
 
     while (isRunning_) {
-        // Wait for a frame from the display queue
+        // Get latest frame from display queue (drop old frames to reduce latency)
         ProcessedFrame processedFrame;
         {
             std::unique_lock<std::mutex> lock(displayQueueMutex_);
@@ -355,6 +348,12 @@ void PipelineManager::displayThreadFunc() {
                 continue;
             }
 
+            // Keep only the latest 2 frames to reduce display lag
+            while (displayQueue_.size() > 2) {
+                displayQueue_.pop();
+                droppedFrames++;
+            }
+
             processedFrame = displayQueue_.front();
             displayQueue_.pop();
         }
@@ -363,31 +362,8 @@ void PipelineManager::displayThreadFunc() {
             continue;
         }
 
-        // Get classifications for this frame
-        std::vector<ClassifiedFace> facesToDraw;
-        {
-            std::lock_guard<std::mutex> lock(frameMapMutex_);
-
-            // Find classifications for this specific frame
-            auto it = frameClassifications_.find(processedFrame.frameId);
-            if (it != frameClassifications_.end()) {
-                facesToDraw = it->second;
-            }
-
-            // Clean up old entries
-            auto cleanIt = frameClassifications_.begin();
-            while (cleanIt != frameClassifications_.end()) {
-                if (cleanIt->first < processedFrame.frameId - 10) {
-                    frameExpectedFaces_.erase(cleanIt->first);
-                    cleanIt = frameClassifications_.erase(cleanIt);
-                } else {
-                    ++cleanIt;
-                }
-            }
-        }
-
-        // Draw classifications on the frame
-        drawResults(processedFrame.frame, facesToDraw);
+        // Draw classifications on the frame (they're already in processedFrame.faces)
+        drawResults(processedFrame.frame, processedFrame.faces);
 
         // Show frame
         cv::imshow("Expression Detection", processedFrame.frame);
@@ -404,7 +380,8 @@ void PipelineManager::displayThreadFunc() {
 
     cv::destroyAllWindows();
 
-    std::cout << "Display Thread Stopped\nTotal Frames: " << frameCount << std::endl;
+    std::cout << "Display Thread Stopped\nTotal Frames: " << frameCount
+              << " (Dropped: " << droppedFrames << " to reduce lag)" << std::endl;
 }
 
 void PipelineManager::drawResults(cv::Mat& frame, const std::vector<ClassifiedFace>& faces) {

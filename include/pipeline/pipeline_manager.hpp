@@ -84,6 +84,7 @@ private:
     // Map to Store Classifications for Frames Processing
     std::map<int, std::vector<ClassifiedFace>> frameClassifications_;
     std::map<int, int> frameExpectedFaces_;
+    std::map<int, ProcessedFrame> pendingFrames_;  // Frames waiting for classification
     std::mutex frameMapMutex_;
 
     /*
