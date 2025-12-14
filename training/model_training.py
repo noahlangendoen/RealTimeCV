@@ -85,10 +85,6 @@ class TrainModel():
         self.class_names = train_dataset.classes
         self.num_classes = len(self.class_names)
 
-        print(f"Loaded {len(train_dataset)} training images and {len(val_dataset)} validation images")
-        print(f"Classes: {self.class_names}")
-        print(f"Device: {self.device}")
-
         return self.train_loader, self.val_loader
 
     def train(self, epochs=10, criterion=None, optimizer=None):
@@ -116,16 +112,7 @@ class TrainModel():
             # Normalize weights
             class_weights = class_weights / class_weights.sum() * len(class_weights)
 
-            # Print class distribution and weights for debugging
-            print("\n" + "="*60)
-            print("CLASS DISTRIBUTION:")
-            for i, (class_name, count) in enumerate(zip(self.class_names, class_counts)):
-                pct = 100 * count / total_samples
-                print(f"  {class_name:15s}: {count:6d} samples ({pct:5.1f}%) | Weight: {class_weights[i]:.3f}")
-            print("="*60 + "\n")
-
             criterion = nn.CrossEntropyLoss(weight=class_weights)
-            print("Using CrossEntropyLoss with class weights")
 
         if optimizer is None:
             # Use AdamW with weight decay for better generalization
@@ -135,7 +122,6 @@ class TrainModel():
                 weight_decay=0.01,
                 betas=(0.9, 0.999)
             )
-            print(f"Using AdamW optimizer with lr={self.learning_rate}, weight_decay=0.01")
 
         # Use ReduceLROnPlateau for adaptive learning rate reduction
         # This will reduce LR when validation loss plateaus
@@ -229,86 +215,22 @@ class TrainModel():
             # Update learning rate based on validation loss
             scheduler.step(avg_val_loss)
 
-            # Print current learning rate
-            current_lr = optimizer.param_groups[0]['lr']
-            print(f"Current learning rate: {current_lr:.6f}")
-
             # Save best model
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 torch.save(self.model.state_dict(), 'best_model.pth')
                 print(f"Saved best model with validation loss: {best_val_loss:.4f}")
 
-                # Also export to ONNX
+                # Also export to ONNX for C++ deployment
                 self._export_to_onnx()
 
             print(f"\nEpoch [{epoch+1}/{epochs}]")
             print(f"Train Loss: {avg_train_loss:.4f}, Train Acc: {train_accuracy:.2f}%")
             print(f"Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%")
 
-            # Check if model is stuck on one prediction
-            unique_predictions = (class_predictions > 0).sum().item()
-            if unique_predictions == 1:
-                print(f"\n⚠ WARNING: Model is predicting only ONE class!")
-                stuck_class = torch.argmax(class_predictions).item()
-                print(f"  Stuck on class: {self.class_names[stuck_class]}")
-                print(f"  This suggests the model has collapsed. Consider:")
-                print(f"    - Reducing learning rate (current: {optimizer.param_groups[0]['lr']:.6f})")
-                print(f"    - Checking class weights (they may be too extreme)")
-                print(f"    - Restarting training with better initialization")
-            elif unique_predictions <= 3:
-                print(f"\n⚠ WARNING: Model is only predicting {unique_predictions} different classes!")
-
-            # Show per-class accuracy and prediction distribution
-            print("\nPer-class Performance:")
-            for i, class_name in enumerate(self.class_names):
-                if class_total[i] > 0:
-                    class_acc = 100 * class_correct[i].item() / class_total[i].item()
-                    pred_pct = 100 * class_predictions[i].item() / val_total
-                    print(f"  {class_name:15s}: Acc={class_acc:5.1f}%  |  "
-                          f"Predicted {class_predictions[i]:4d} times ({pred_pct:4.1f}%)")
-
-            print("-" * 60)
-
         print("Training completed!")
         return self.model
 
-    def analyze_performance(self):
-        """
-        Analyze and visualize model performance
-        """
-        # Create figure with subplots
-        fig, axes = plt.subplots(1, 2, figsize=(15, 5))
-
-        # Plot training and validation loss
-        axes[0].plot(self.train_losses, label='Train Loss', marker='o')
-        axes[0].plot(self.val_losses, label='Validation Loss', marker='s')
-        axes[0].set_xlabel('Epoch')
-        axes[0].set_ylabel('Loss')
-        axes[0].set_title('Training and Validation Loss')
-        axes[0].legend()
-        axes[0].grid(True)
-
-        # Plot training and validation accuracy
-        axes[1].plot(self.train_accuracies, label='Train Accuracy', marker='o')
-        axes[1].plot(self.val_accuracies, label='Validation Accuracy', marker='s')
-        axes[1].set_xlabel('Epoch')
-        axes[1].set_ylabel('Accuracy (%)')
-        axes[1].set_title('Training and Validation Accuracy')
-        axes[1].legend()
-        axes[1].grid(True)
-
-        plt.tight_layout()
-        plt.savefig('training_performance.png')
-        print("Performance plot saved as 'training_performance.png'")
-        plt.show()
-
-        # Print final metrics
-        print("\nFinal Metrics:")
-        print(f"Best Training Accuracy: {max(self.train_accuracies):.2f}%")
-        print(f"Best Validation Accuracy: {max(self.val_accuracies):.2f}%")
-        print(f"Final Training Loss: {self.train_losses[-1]:.4f}")
-        print(f"Final Validation Loss: {self.val_losses[-1]:.4f}")
 
     def _export_to_onnx(self, output_path="models/best_model.onnx", image_size=224):
         """
@@ -386,13 +308,7 @@ def main():
     print("\nStarting training...")
     trainer.train(epochs=30)
 
-    # Analyze performance
-    print("\nAnalyzing performance...")
-    trainer.analyze_performance()
-
-    print("\n" + "=" * 70)
     print("Training complete! Best model saved as 'best_model.pth'")
-    print("=" * 70)
 
 
 if __name__ == "__main__":
