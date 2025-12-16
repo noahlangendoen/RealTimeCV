@@ -236,7 +236,7 @@ class TrainModel():
             # Save best model
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
-                torch.save(self.model.state_dict(), 'best_model48.pth')
+                torch.save(self.model.state_dict(), 'models/best_model48.pth')
                 print(f"Saved best model with validation loss: {best_val_loss:.4f}")
 
                 # Also export to ONNX
@@ -272,43 +272,6 @@ class TrainModel():
 
         print("Training completed!")
         return self.model
-
-    def analyze_performance(self):
-        """
-        Analyze and visualize model performance
-        """
-        # Create figure with subplots
-        fig, axes = plt.subplots(1, 2, figsize=(15, 5))
-
-        # Plot training and validation loss
-        axes[0].plot(self.train_losses, label='Train Loss', marker='o')
-        axes[0].plot(self.val_losses, label='Validation Loss', marker='s')
-        axes[0].set_xlabel('Epoch')
-        axes[0].set_ylabel('Loss')
-        axes[0].set_title('Training and Validation Loss (48x48)')
-        axes[0].legend()
-        axes[0].grid(True)
-
-        # Plot training and validation accuracy
-        axes[1].plot(self.train_accuracies, label='Train Accuracy', marker='o')
-        axes[1].plot(self.val_accuracies, label='Validation Accuracy', marker='s')
-        axes[1].set_xlabel('Epoch')
-        axes[1].set_ylabel('Accuracy (%)')
-        axes[1].set_title('Training and Validation Accuracy (48x48)')
-        axes[1].legend()
-        axes[1].grid(True)
-
-        plt.tight_layout()
-        plt.savefig('training_performance_48.png')
-        print("Performance plot saved as 'training_performance_48.png'")
-        plt.show()
-
-        # Print final metrics
-        print("\nFinal Metrics:")
-        print(f"Best Training Accuracy: {max(self.train_accuracies):.2f}%")
-        print(f"Best Validation Accuracy: {max(self.val_accuracies):.2f}%")
-        print(f"Final Training Loss: {self.train_losses[-1]:.4f}")
-        print(f"Final Validation Loss: {self.val_losses[-1]:.4f}")
 
     def _export_to_onnx(self, output_path="models/best_model48.onnx", image_size=48):
         """
@@ -362,10 +325,6 @@ def main():
 
     from models.improved_model_fr_cnn_48 import ImprovedNet48
 
-    print("=" * 70)
-    print("RealTimeCV - Facial Emotion Recognition Training (48x48)")
-    print("=" * 70)
-
     # Initialize model
     print("\nInitializing ImprovedNet48 model...")
     model = ImprovedNet48(num_classes=7)
@@ -378,8 +337,8 @@ def main():
     # Create trainer with hyperparameters
     trainer = TrainModel(
         model=model,
-        batch_size=64,  # Increased batch size for 48x48 (smaller images = more GPU memory available)
-        learning_rate=0.001  # FIXED: Increased from 0.0001 to overcome initial saturation
+        batch_size=64,
+        learning_rate=0.001
     )
 
     # Preprocess and load data - IMPORTANT: Use 48x48 images!
@@ -390,14 +349,8 @@ def main():
     print("\nStarting training...")
     trainer.train(epochs=30)
 
-    # Analyze performance
-    print("\nAnalyzing performance...")
-    trainer.analyze_performance()
-
-    print("\n" + "=" * 70)
     print("Training complete! Best model saved as 'best_model48.pth'")
     print("ONNX model exported to 'models/best_model48.onnx'")
-    print("=" * 70)
 
 
 if __name__ == "__main__":
