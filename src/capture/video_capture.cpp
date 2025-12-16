@@ -43,6 +43,23 @@ bool VideoCapture::initialize() {
     return true;
 }
 
+bool VideoCapture::captureFrame(cv::Mat& frame) {
+    if (!cap_.isOpened()) {
+        std::cerr << "ERROR: Camera not initialized. Call initialize() first." << std::endl;
+        return false;
+    }
+
+    // Capture frame directly
+    bool success = cap_.read(frame);
+
+    if (success && !frame.empty()) {
+        frameCount_++;
+        return true;
+    }
+
+    return false;
+}
+
 void VideoCapture::start(FrameBuffer* outputBuffer) {
     if (isRunning_) {
         std::cerr << "WARNING: Capture thread is already running" << std::endl;

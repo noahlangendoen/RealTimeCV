@@ -54,7 +54,8 @@ Frame FrameBuffer::pop() {
         return Frame();
     }
 
-    Frame frame = buffer_.front();
+    // Use move semantics to avoid copying cv::Mat data
+    Frame frame = std::move(buffer_.front());
     buffer_.pop();
 
     // Notify one waiting producer
@@ -70,7 +71,8 @@ std::optional<Frame> FrameBuffer::tryPop() {
         return std::nullopt;
     }
 
-    Frame frame = buffer_.front();
+    // Use move semantics to avoid copying
+    Frame frame = std::move(buffer_.front());
     buffer_.pop();
 
     condNotFull_.notify_one();
@@ -92,7 +94,8 @@ std::optional<Frame> FrameBuffer::popWithTimeout(int milliseconds) {
         return std::nullopt;
     }
 
-    Frame frame = buffer_.front();
+    // Use move semantics to avoid copying
+    Frame frame = std::move(buffer_.front());
     buffer_.pop();
 
     condNotFull_.notify_one();

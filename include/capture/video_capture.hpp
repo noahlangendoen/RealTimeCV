@@ -17,7 +17,10 @@ public:
     // Initialize the camera
     bool initialize();
 
-    // Start capture thread
+    // Capture a single frame (non-blocking, for external thread control)
+    bool captureFrame(cv::Mat& frame);
+
+    // Start capture thread (deprecated, use captureFrame from external thread instead)
     void start(FrameBuffer* outputBuffer);
 
     // Stop capture thread

@@ -22,3 +22,5 @@ CMakeFiles
 data/
 
 .env
+
+.claude/
