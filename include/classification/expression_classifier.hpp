@@ -31,7 +31,7 @@ private:
     };
 
     // Variable to change image input size. Always n x n size.
-    const int inputSize_ = 224;
+    const int inputSize_ = 48;
 };
 
 #endif

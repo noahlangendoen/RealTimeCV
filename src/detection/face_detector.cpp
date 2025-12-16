@@ -141,9 +141,7 @@ std::vector<FaceBox> FaceDetector::detectFaces(const cv::Mat& frame) {
                 faces.push_back(face);
             }
         }
-        
-        std::cout << "Detected " << faces.size() << " faces" << std::endl;
-        
+                
     } catch (const std::exception& e) {
         std::cerr << "Detection error: " << e.what() << std::endl;
     }

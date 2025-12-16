@@ -67,9 +67,33 @@ set(SOURCES
     src/pipeline/pipeline_manager.cpp
 )
 
-# Test executable
-add_executable(test_types src/tests/test_types.cpp src/core/types.cpp)
+# Test executables
+add_executable(test_types 
+    src/tests/test_types.cpp 
+    src/core/types.cpp
+)
 target_link_libraries(test_types ${OpenCV_LIBS})
+
+add_executable(test_video_capture
+    src/tests/test_video_capture.cpp
+    src/capture/video_capture.cpp
+)
+target_link_libraries(test_video_capture ${OpenCV_LIBS})
+
+add_executable(test_capture_detection
+    src/tests/test_capture_detection.cpp
+    src/capture/video_capture.cpp
+    src/detection/face_detector.cpp
+    src/core/frame_buffer.cpp
+    src/core/types.cpp
+)
+target_link_libraries(test_capture_detection ${OpenCV_LIBS})
+
+if(HAS_ONNXRUNTIME)
+    target_include_directories(test_capture_detection PRIVATE ${ONNXRUNTIME_INCLUDE_DIR})
+    target_link_libraries(test_capture_detection ${ONNXRUNTIME_LIB})
+    target_compile_definitions(test_capture_detection PRIVATE HAS_ONNXRUNTIME)
+endif()
 
 # Create executable
 add_executable(cv_pipeline ${SOURCES})
