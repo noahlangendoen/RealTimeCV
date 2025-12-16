@@ -73,6 +73,11 @@ class ImprovedNet48(nn.Module):
         # Initialize weights using He initialization
         self._initialize_weights()
 
+        # CRITICAL FIX: Scale down final layer to prevent output saturation
+        # This prevents extreme logits that cause vanishing gradients
+        self.fc[4].weight.data *= 0.01
+        self.fc[4].bias.data.zero_()
+
     def _make_layer(self, in_channels, out_channels, num_blocks, stride):
         """Create a layer with multiple residual blocks"""
         layers = []

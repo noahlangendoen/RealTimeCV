@@ -40,24 +40,23 @@ class TrainModel():
         Args:
             image_size: Target image size (default 48x48 for emotion recognition)
         """
-        # Define data transforms with enhanced augmentation for training
+        # Define data transforms with REDUCED augmentation for 48x48 images
+        # FIXED: Previous augmentation was too aggressive for tiny faces
         train_transform = transforms.Compose([
             transforms.Resize((image_size, image_size)),
             transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomRotation(degrees=15),
-            transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
-            transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.2, hue=0.1),
-            transforms.RandomGrayscale(p=0.1),
+            transforms.RandomRotation(degrees=5),  # REDUCED: 15° -> 5° (prevents face distortion)
+            transforms.RandomAffine(degrees=0, translate=(0.05, 0.05), scale=(0.95, 1.05)),  # REDUCED: 10% -> 5%
+            transforms.ColorJitter(brightness=0.1, contrast=0.1),  # REDUCED: 0.3 -> 0.1 (preserves expression cues)
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            transforms.RandomErasing(p=0.2, scale=(0.02, 0.1))
+            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),  # FIXED: Use simple normalization for faces
         ])
 
         # Validation transform without augmentation
         val_transform = transforms.Compose([
             transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # FIXED: Match training normalization
         ])
 
         # Load datasets using ImageFolder
@@ -113,8 +112,9 @@ class TrainModel():
             class_weights = [total_samples / count for count in class_counts]
             class_weights = torch.FloatTensor(class_weights).to(self.device)
 
-            # Normalize weights
-            class_weights = class_weights / class_weights.sum() * len(class_weights)
+            # FIXED: Remove normalization that causes extreme weight ratios
+            # Use sqrt to moderate the effect of class imbalance
+            class_weights = torch.sqrt(class_weights)
 
             # Print class distribution and weights for debugging
             print("\n" + "="*60)
@@ -379,7 +379,7 @@ def main():
     trainer = TrainModel(
         model=model,
         batch_size=64,  # Increased batch size for 48x48 (smaller images = more GPU memory available)
-        learning_rate=0.0001
+        learning_rate=0.001  # FIXED: Increased from 0.0001 to overcome initial saturation
     )
 
     # Preprocess and load data - IMPORTANT: Use 48x48 images!

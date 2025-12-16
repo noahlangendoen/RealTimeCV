@@ -119,26 +119,27 @@ cv::Mat ExpressionClassifier::preprocessFace(const cv::Mat& face) {
     // Resize to 48x48
     cv::Mat resized;
     cv::resize(face, resized, cv::Size(inputSize_, inputSize_));
-    
+
     // Convert BGR to RGB (OpenCV uses BGR by default!)
     cv::Mat rgb;
     cv::cvtColor(resized, rgb, cv::COLOR_BGR2RGB);
-    
+
     // Convert to float and normalize to [0, 1]
     cv::Mat floatImage;
     rgb.convertTo(floatImage, CV_32F, 1.0 / 255.0);
-    
-    // Apply ImageNet normalization
+
+    // FIXED: Apply simple normalization matching training (mean=0.5, std=0.5)
+    // This converts [0, 1] range to [-1, 1] range
     std::vector<cv::Mat> channels(3);
     cv::split(floatImage, channels);
-    
+
     // RGB order now: channels[0]=R, channels[1]=G, channels[2]=B
-    channels[0] = (channels[0] - 0.485) / 0.229;  // R
-    channels[1] = (channels[1] - 0.456) / 0.224;  // G
-    channels[2] = (channels[2] - 0.406) / 0.225;  // B
-    
+    channels[0] = (channels[0] - 0.5) / 0.5;  // R: normalize to [-1, 1]
+    channels[1] = (channels[1] - 0.5) / 0.5;  // G: normalize to [-1, 1]
+    channels[2] = (channels[2] - 0.5) / 0.5;  // B: normalize to [-1, 1]
+
     cv::Mat normalized;
     cv::merge(channels, normalized);
-    
+
     return normalized;
 }
