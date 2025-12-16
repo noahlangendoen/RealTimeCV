@@ -19,7 +19,7 @@ PipelineManager::PipelineManager(
     , isInitialized_(false)
     , detectionThreshold_(0.5f)
     , classificationThreshold_(0.3f)
-    , maxQueueSize_(3)  // Smaller buffer for lower latency
+    , maxQueueSize_(3)
     , frameIdCounter_(0)
 {
 }
