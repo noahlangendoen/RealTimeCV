@@ -282,7 +282,7 @@ def main():
     import sys
     sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-    from models.facial_recog_cnn import EvenBetterNet
+    from deprecated.models.facial_recog_cnn import EvenBetterNet
     from models.improved_model_fr_cnn import ImprovedNet
 
     print("=" * 70)

@@ -40,8 +40,6 @@ public:
 
     void setClassificationThreshold(float threshold);
 
-    void setMaxQueueSize(size_t size);
-
 private:
     // Webcam Connection & Read Thread
     void captureThreadFunc();

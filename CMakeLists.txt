@@ -60,7 +60,6 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 set(SOURCES
     src/main.cpp
     src/core/frame_buffer.cpp
-    src/core/types.cpp
     src/capture/video_capture.cpp
     src/detection/face_detector.cpp
     src/classification/expression_classifier.cpp
@@ -70,7 +69,6 @@ set(SOURCES
 # Test executables
 add_executable(test_types 
     src/tests/test_types.cpp 
-    src/core/types.cpp
 )
 target_link_libraries(test_types ${OpenCV_LIBS})
 
@@ -85,7 +83,6 @@ add_executable(test_capture_detection
     src/capture/video_capture.cpp
     src/detection/face_detector.cpp
     src/core/frame_buffer.cpp
-    src/core/types.cpp
 )
 target_link_libraries(test_capture_detection ${OpenCV_LIBS})
 

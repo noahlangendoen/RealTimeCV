@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .residual_block import ResidualBlock
+from ...models.residual_block import ResidualBlock
 
 class EvenBetterNet(nn.Module):
     def __init__(self):

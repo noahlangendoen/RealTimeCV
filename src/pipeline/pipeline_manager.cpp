@@ -33,7 +33,7 @@ bool PipelineManager::initialize() {
 
     // Initialize Live Capture
 
-    std::cout << "Initializing Live Caputre..." << std::endl;
+    std::cout << "Initializing Live Capture..." << std::endl;
     videoCapture_ = std::make_unique<VideoCapture>(
         cameraId_, cv::CAP_ANY, captureWidth_, captureHeight_
     );
@@ -66,7 +66,7 @@ bool PipelineManager::initialize() {
     detectionBuffer_ = std::make_unique<FrameBuffer>(maxQueueSize_);
 
     isInitialized_ = true;
-    std::cout << "Succesfully Initialized Pipeline" << std::endl;
+    std::cout << "Successfully Initialized Pipeline" << std::endl;
 
     return true;
 }
@@ -119,17 +119,17 @@ void PipelineManager::stop() {
     }
 
     if (detectionThread_.joinable()) {
-        std::cout << "Waiting for Capture Thread..." << std::endl;
+        std::cout << "Waiting for Detection Thread..." << std::endl;
         detectionThread_.join();
     }
 
     if (classificationThread_.joinable()) {
-        std::cout << "Waiting for Capture Thread..." << std::endl;
+        std::cout << "Waiting for Detection Thread..." << std::endl;
         classificationThread_.join();
     }
 
     if (displayThread_.joinable()) {
-        std::cout << "Waiting for Capture Thread..." << std::endl;
+        std::cout << "Waiting for Detection Thread..." << std::endl;
         displayThread_.join();
     }
 
@@ -211,7 +211,7 @@ void PipelineManager::detectionThreadFunc() {
 
         // Store frame data and track expected faces
         ProcessedFrame processedFrame;
-        processedFrame.frame = frame.data;  // Don't clone - use cv::Mat reference counting
+        processedFrame.frame = frame.data;
         processedFrame.frameId = frame.frameId;
         processedFrame.timestamp = frame.timestamp;
         processedFrame.faces = std::vector<ClassifiedFace>();
@@ -232,8 +232,7 @@ void PipelineManager::detectionThreadFunc() {
             frameExpectedFaces_[frame.frameId] = filteredFaces.size();
             frameClassifications_[frame.frameId] = std::vector<ClassifiedFace>();
         }
-        // Lock released before next operation
-
+        
         // Push each detected face to classification queue
         if (!filteredFaces.empty()) {
             std::unique_lock<std::mutex> lock(classificationQueueMutex_);

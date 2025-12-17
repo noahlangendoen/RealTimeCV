@@ -19,9 +19,9 @@ int main() {
     PipelineManager pipeline(
         detector_path,
         classifier_path,
-        0,      // Device ID
-        640,    // Camera Width
-        480     // Camera Height
+        0,
+        640,
+        480
     );
     
     if (!pipeline.initialize()) {

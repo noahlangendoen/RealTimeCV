@@ -2,25 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .residual_block import ResidualBlock
-
-
-class SEBlock(nn.Module):
-    """Squeeze-and-Excitation block for channel attention"""
-    def __init__(self, channels, reduction=16):
-        super().__init__()
-        self.squeeze = nn.AdaptiveAvgPool2d(1)
-        self.excitation = nn.Sequential(
-            nn.Linear(channels, channels // reduction, bias=False),
-            nn.ReLU(inplace=True),
-            nn.Linear(channels // reduction, channels, bias=False),
-            nn.Sigmoid()
-        )
-
-    def forward(self, x):
-        b, c, _, _ = x.size()
-        y = self.squeeze(x).view(b, c)
-        y = self.excitation(y).view(b, c, 1, 1)
-        return x * y.expand_as(x)
     
     
 class ImprovedNet(nn.Module):
