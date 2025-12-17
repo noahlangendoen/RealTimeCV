@@ -1,7 +1,7 @@
 #include "core/env_loader.hpp"
 #include "pipeline/pipeline_manager.hpp"
 
-// Modify the path to the env file as needed -- this may need to be changed
+// Modify the path to the env file as needed
 #define ENV_PATH "../.env"
 
 int main() {
