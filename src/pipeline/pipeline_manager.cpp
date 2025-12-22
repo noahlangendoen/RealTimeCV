@@ -404,12 +404,12 @@ void PipelineManager::drawResults(cv::Mat& frame, const std::vector<ClassifiedFa
     
     static const std::map<std::string, cv::Scalar> colors = {
         {"happy", cv::Scalar(0, 255, 0)},
-        {"angry", cv::Scalar(255, 0, 0)},
+        {"angry", cv::Scalar(0, 0, 255)},
         {"neutral", cv::Scalar(255, 255, 255)},
         {"sad", cv::Scalar(0, 0, 255)},
         {"fear", cv::Scalar(64, 64, 64)},
-        {"surprise", cv::Scalar(255, 255, 51)},
-        {"disgust", cv::Scalar(76, 153, 0)}
+        {"surprise", cv::Scalar(0, 255, 255)},
+        {"disgust", cv::Scalar(0, 100, 0)}
     };
 
     for (const auto& face : faces) {
