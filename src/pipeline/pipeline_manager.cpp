@@ -401,9 +401,30 @@ void PipelineManager::displayThreadFunc() {
 }
 
 void PipelineManager::drawResults(cv::Mat& frame, const std::vector<ClassifiedFace>& faces) {
+    
+    static const std::map<std::string, cv::Scalar> colors = {
+        {"happy", cv::Scalar(0, 255, 0)},
+        {"angry", cv::Scalar(255, 0, 0)},
+        {"neutral", cv::Scalar(255, 255, 255)},
+        {"sad", cv::Scalar(0, 0, 255)},
+        {"fear", cv::Scalar(64, 64, 64)},
+        {"surprise", cv::Scalar(255, 255, 51)},
+        {"disgust", cv::Scalar(76, 153, 0)}
+    };
+
     for (const auto& face : faces) {
+
+        std::string result = face.expression.label;
+        std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+
+        cv::Scalar boxColor(255, 255, 255);
+        auto it = colors.find(result);
+        if (it != colors.end()) {
+            boxColor = it->second;
+        }
+
         // Draw BBox
-        cv::rectangle(frame, face.bbox.box, cv::Scalar(0, 255, 0), 2);
+        cv::rectangle(frame, face.bbox.box, boxColor, 2);
 
         // Filter by classification threshold
         if (face.expression.confidence < classificationThreshold_) {
