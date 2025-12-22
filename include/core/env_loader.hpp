@@ -9,9 +9,6 @@
 #include <map>
 #include <iostream>
 
-
-// Hello
-
 class EnvLoader {
 private:
     std::map<std::string, std::string> env_vars;
