@@ -403,6 +403,13 @@ void PipelineManager::displayThreadFunc() {
 }
 
 void PipelineManager::drawResults(cv::Mat& frame, const std::vector<ClassifiedFace>& faces) {
+    std::stringstream thresholdText;
+    thresholdText << "Threshold: " << std::fixed << std::setprecision(0)
+                    << (classificationThreshold_ * 100) << "% (+/- to adjust)";
+
+    cv::putText(frame, thresholdText.str(), cv::Point(10, 30),
+                cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
+
     for (const auto& face : faces) {
         // Draw BBox
         cv::rectangle(frame, face.bbox.box, cv::Scalar(0, 255, 0), 2);
@@ -436,12 +443,7 @@ void PipelineManager::drawResults(cv::Mat& frame, const std::vector<ClassifiedFa
                     cv::FONT_HERSHEY_COMPLEX, 0.6,
                     cv::Scalar(0, 0, 0), 2);
 
-        std::stringstream thresholdText;
-        thresholdText << "Threshold: " << std::fixed << std::setprecision(0)
-                      << (classificationThreshold_ * 100) << "% (+/- to adjust)";
-
-        cv::putText(frame, thresholdText.str(), cv::Point(10, 30),
-                    cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
+        
     }
 
 }
