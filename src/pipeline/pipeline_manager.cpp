@@ -406,7 +406,7 @@ void PipelineManager::drawResults(cv::Mat& frame, const std::vector<ClassifiedFa
         {"happy", cv::Scalar(0, 255, 0)},
         {"angry", cv::Scalar(0, 0, 255)},
         {"neutral", cv::Scalar(255, 255, 255)},
-        {"sad", cv::Scalar(0, 0, 255)},
+        {"sad", cv::Scalar(255, 0, 0)},
         {"fear", cv::Scalar(64, 64, 64)},
         {"surprise", cv::Scalar(0, 255, 255)},
         {"disgust", cv::Scalar(0, 100, 0)}
