@@ -390,6 +390,8 @@ void PipelineManager::displayThreadFunc() {
         if (key == 27) {
             isRunning_ = false;
             break;
+        } else if (key) {
+            handleKey(key);
         }
 
         frameCount++;
@@ -434,5 +436,20 @@ void PipelineManager::drawResults(cv::Mat& frame, const std::vector<ClassifiedFa
                     cv::FONT_HERSHEY_COMPLEX, 0.6,
                     cv::Scalar(0, 0, 0), 2);
 
+        std::stringstream thresholdText;
+        thresholdText << "Threshold: " << std::fixed << std::setprecision(0)
+                      << (classificationThreshold_ * 100) << "% (+/- to adjust)";
+
+        cv::putText(frame, thresholdText.str(), cv::Point(10, 30),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
     }
+
 }
+
+void PipelineManager::handleKey(int k) {
+        if (k == 43) {
+            classificationThreshold_ = std::min(1.0f, classificationThreshold_ + 0.01f);
+        } else if (k == 45) {
+            classificationThreshold_ = std::max(0.0f, classificationThreshold_ - 0.01f);
+        }
+    }

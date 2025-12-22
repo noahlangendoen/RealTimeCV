@@ -56,7 +56,7 @@ private:
     // Draw Results of BBox & Labels
     void drawResults(cv::Mat& frame, const std::vector<ClassifiedFace>& faces);
 
-
+    void handleKey(int key);
     /*
     COMPONENTS
     */
