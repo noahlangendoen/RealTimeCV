@@ -403,16 +403,39 @@ void PipelineManager::displayThreadFunc() {
 }
 
 void PipelineManager::drawResults(cv::Mat& frame, const std::vector<ClassifiedFace>& faces) {
+    // Map expressions to colors for display
+    static const std::map<std::string, cv::Scalar> colors = {
+        {"happy", cv::Scalar(0, 255, 0)},
+        {"angry", cv::Scalar(0, 0, 255)},
+        {"neutral", cv::Scalar(255, 255, 255)},
+        {"sad", cv::Scalar(255, 0, 0)},
+        {"fear", cv::Scalar(64, 64, 64)},
+        {"surprise", cv::Scalar(0, 255, 255)},
+        {"disgust", cv::Scalar(0, 100, 0)}
+    };
+
+    // Display confidence threshold at the top left of the window
     std::stringstream thresholdText;
     thresholdText << "Threshold: " << std::fixed << std::setprecision(0)
                     << (classificationThreshold_ * 100) << "% (+/- to adjust)";
 
     cv::putText(frame, thresholdText.str(), cv::Point(10, 30),
                 cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
-
+    
+    // Classify each detected face
     for (const auto& face : faces) {
+
+        std::string result = face.expression.label;
+        std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+
+        cv::Scalar boxColor(255, 255, 255);
+        auto it = colors.find(result);
+        if (it != colors.end()) {
+            boxColor = it->second;
+        }
+
         // Draw BBox
-        cv::rectangle(frame, face.bbox.box, cv::Scalar(0, 255, 0), 2);
+        cv::rectangle(frame, face.bbox.box, boxColor, 2);
 
         // Filter by classification threshold
         if (face.expression.confidence < classificationThreshold_) {
@@ -442,8 +465,6 @@ void PipelineManager::drawResults(cv::Mat& frame, const std::vector<ClassifiedFa
         cv::putText(frame, text, textOrg,
                     cv::FONT_HERSHEY_COMPLEX, 0.6,
                     cv::Scalar(0, 0, 0), 2);
-
-        
     }
 
 }
